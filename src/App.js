@@ -1,22 +1,38 @@
-import React, { useEffect, useState, useRef } from "react";
-import "./App.css";
-import "./server";
+import React, { useEffect, useState, useRef } from 'react';
+import './App.css';
+import './server';
 
 function App() {
   let [isLoading, setIsLoading] = useState(true);
   let [isSaving, setIsSaving] = useState(false);
   let [todos, setTodos] = useState([]);
-  let [newTodo, setNewTodo] = useState("");
+  let [newTodo, setNewTodo] = useState('');
   let inputEl = useRef(null);
 
   useEffect(() => {
-    fetch("/api/todos")
+    fetch('/api/todos')
       .then(res => res.json())
       .then(json => {
         setIsLoading(false);
         setTodos(json);
       });
   }, []);
+
+  useEffect(() => {
+    if (isSaving) {
+      fetch('/api/todos', {
+        method: 'POST',
+        body: JSON.stringify({ todo: { text: newTodo } }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          setIsSaving(false);
+          setTodos(state => [...state, data]);
+          setNewTodo('');
+          inputEl.current.focus();
+        });
+    }
+  }, [isSaving]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(event) {
     setNewTodo(event.target.value);
@@ -25,18 +41,6 @@ function App() {
   function handleSubmit(e) {
     e.preventDefault();
     setIsSaving(true);
-
-    fetch("/api/todos", {
-      method: "POST",
-      body: JSON.stringify({ todo: { text: newTodo } })
-    })
-      .then(res => res.json())
-      .then(newTodo => {
-        setIsSaving(false);
-        setTodos([...todos, newTodo]);
-        setNewTodo("");
-        inputEl.current.focus();
-      });
   }
 
   return (
@@ -50,7 +54,7 @@ function App() {
             value={newTodo}
             onChange={handleChange}
             className={`w-full shadow rounded px-3 py-2 focus:outline-none focus:shadow-outline ${isSaving &&
-              "opacity-75"}`}
+              'opacity-75'}`}
             autoFocus
             placeholder="What needs to be done?"
             ref={inputEl}
